@@ -95,7 +95,8 @@ EOF
           # to YAML for the header
           data = {
              'layout' => 'post',
-             'title' => title.to_s,
+             'title' => page_title,
+             'h1' => title.to_s,
              'url' => url_alias,
              'created' => created,
              'categories' => tags.split('|')
