@@ -13,7 +13,7 @@ module JekyllImport
                       node AS n \
                  LEFT OUTER JOIN term_node AS tn ON tn.nid = n.nid \
                  LEFT OUTER JOIN term_data AS td ON tn.tid = td.tid \
-                WHERE (n.type = 'blog' OR n.type = 'story' OR n.type = 'article') \
+                WHERE (n.type = 'blog' OR n.type ='page' OR n.type = 'story' OR n.type = 'article') \
                   AND n.vid = nr.vid \
              GROUP BY n.nid"
 
@@ -77,6 +77,7 @@ EOF
         end
 
         db[QUERY].each do |post|
+          
           # Get required fields and construct Jekyll compatible name
           node_id = post[:nid]
           title = post[:title]
@@ -87,13 +88,15 @@ EOF
           is_published = post[:status] == 1
           dir = is_published ? "_posts" : "_drafts"
           slug = title.strip.downcase.gsub(/(&|&amp;)/, ' and ').gsub(/[\s\.\/\\]/, '-').gsub(/[^\w-]/, '').gsub(/[-_]{2,}/, '-').gsub(/^[-_]/, '').gsub(/[-_]$/, '')
-          name = time.strftime("%Y-%m-%d-") + slug + '.md'
-
+          name = slug + '.md'
+          page_title = db["SELECT page_title FROM #{prefix}page_title WHERE id = #{node_id}"].get
+          url_alias = db["SELECT dst FROM #{prefix}url_alias WHERE src = ?", "node/#{node_id}"].get
           # Get the relevant fields as a hash, delete empty fields and convert
           # to YAML for the header
           data = {
              'layout' => 'post',
              'title' => title.to_s,
+             'url' => url_alias,
              'created' => created,
              'categories' => tags.split('|')
            }.delete_if { |k,v| v.nil? || v == ''}.each_pair {
@@ -106,27 +109,7 @@ EOF
             f.puts "---"
             f.puts content
           end
-
-          # Make a file to redirect from the old Drupal URL
-          if is_published
-            aliases = db["SELECT dst FROM #{prefix}url_alias WHERE src = ?", "node/#{node_id}"].all
-
-            aliases.push(:dst => "node/#{node_id}")
-
-            aliases.each do |url_alias|
-              FileUtils.mkdir_p url_alias[:dst]
-              File.open("#{url_alias[:dst]}/index.md", "w") do |f|
-                f.puts "---"
-                f.puts "layout: refresh"
-                f.puts "refresh_to_post_id: /#{time.strftime("%Y/%m/%d/") + slug}"
-                f.puts "---"
-              end
-            end
-          end
         end
-
-        # TODO: Make dirs & files for nodes of type 'page'
-        # Make refresh pages for these as well
       end
     end
   end
