@@ -91,6 +91,7 @@ EOF
           name = slug + '.md'
           page_title = db["SELECT page_title FROM #{prefix}page_title WHERE id = #{node_id}"].get
           url_alias = db["SELECT dst FROM #{prefix}url_alias WHERE src = ?", "node/#{node_id}"].get
+          menu_slug = db["SELECT link_title FROM #{prefix}menu_links WHERE link_path = ?", "node/#{node_id}"].get
           # Get the relevant fields as a hash, delete empty fields and convert
           # to YAML for the header
           data = {
@@ -98,6 +99,7 @@ EOF
              'title' => page_title,
              'h1' => title.to_s,
              'url' => url_alias,
+             'link' => menu_slug,
              'created' => created,
              'categories' => tags.split('|')
            }.delete_if { |k,v| v.nil? || v == ''}.each_pair {
