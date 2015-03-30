@@ -99,7 +99,7 @@ EOF
              'title' => page_title,
              'h1' => title.to_s,
              'url' => url_alias,
-             'link' => menu_slug,
+             'LinkTitle' => menu_slug,
              'created' => created,
              'categories' => tags.split('|')
            }.delete_if { |k,v| v.nil? || v == ''}.each_pair {
